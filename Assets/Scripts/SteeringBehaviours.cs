@@ -1,48 +1,85 @@
 ﻿using UnityEngine;
+using System.Collections.Generic;
 
 public class SteeringBehaviours
 {
-    static public Vector3 Seek(SBAgent agent, Transform target)
-    {
-        // cálculo del vector deseado
-        Vector3 desired = (target.position - agent.transform.position).normalized * agent.maxSpeed;
+    static public Vector3 Seek(SBAgent agent, Transform target, float range = 99999)
+	{
+		// cálculo del vector deseado
+		Vector3 desired = Vector3.zero;
+		Vector3 difference = (target.position - agent.transform.position);
+		float distance = difference.magnitude;
+		desired = difference.normalized * agent.maxSpeed;
 
-        // cálculo de los demás vectores
-        Vector3 steer = Vector3.ClampMagnitude(desired - agent.velocity, agent.maxSteer);
+		Vector3 steer;
+		if (distance < range)
+		{
 
-        return steer;
-    }
+			steer = Vector3.ClampMagnitude(desired - agent.velocity, agent.maxSteer);
+		}
+		else
+		{
+			steer = Vector3.zero;
+		}
 
-    static public Vector3 Flee(SBAgent agent, Transform target)
-    {
-        // cálculo del vector deseado
-        Vector3 desired = -(target.position - agent.transform.position).normalized * agent.maxSpeed;
+		// cálculo de los demás vectores
+		return steer;
+	}
 
-        // cálculo de los demás vectores
-        Vector3 steer = Vector3.ClampMagnitude(desired - agent.velocity, agent.maxSteer);
+	static public Vector3 Flee(SBAgent agent, Transform target, float range = 99999)
+	{
+		// cálculo del vector deseado
+		Vector3 desired = Vector3.zero;
+		Vector3 difference = (target.position - agent.transform.position);
+		float distance = difference.magnitude;
+		desired = -difference.normalized * agent.maxSpeed;
 
-        return steer;
-    }
+		Vector3 steer;
+		if (distance < range)
+		{
 
-    static public Vector3 Arrive(SBAgent agent, Transform target, float range)
-    {
-        // cálculo del vector deseado
-        Vector3 desired;
-        Vector3 difference = (target.position - agent.transform.position);
-        float distance = difference.magnitude;
+			steer = Vector3.ClampMagnitude(desired - agent.velocity, agent.maxSteer);
+		}
+		else
+		{
+			steer = Vector3.zero;
+		}
 
-        desired = difference.normalized * agent.maxSpeed;
+		// cálculo de los demás vectores
+		return steer;
+	}
 
-        if (distance < range)
-        {
-            desired *= distance / range;
-        }
+	static public Vector3 Arrive(SBAgent agent, Transform target, float range = 99999)
+	{
+		// cálculo del vector deseado
+		Vector3 desired;
+		Vector3 difference = (target.position - agent.transform.position);
+		float distance = difference.magnitude;
 
-        // cálculo de los demás vectores
-        Vector3 steer = Vector3.ClampMagnitude(desired - agent.velocity, agent.maxSteer);
+		desired = difference.normalized * agent.maxSpeed;
 
-        return steer;
-    }
+		if (distance < range)
+		{
+			desired *= distance / range;
+		}
+
+		// cálculo de los demás vectores
+		Vector3 steer = Vector3.ClampMagnitude(desired - agent.velocity, agent.maxSteer);
+
+		return steer;
+	}
+
+	static public Vector3 Separate(SBAgent agent, List<GameObject> agentsToAvoid, float range)
+	{
+		Vector3 steer = Vector3.zero;
+		
+		for (int i = 0; i < agentsToAvoid.Count; i++)
+		{
+			steer += Flee(agent, agentsToAvoid[i].transform, range);
+		}
+
+		return steer;
+	}
 
 
 
@@ -57,7 +94,7 @@ public class SteeringBehaviours
 
 
 
-        if (distance > radio)
+        if (distance >= radio)
         {
             desired = (center - agent.transform.position).normalized * agent.maxSpeed;
 
@@ -69,13 +106,34 @@ public class SteeringBehaviours
 
         }
 
-        // cálculo de los demás vectores
-
         steer = Vector3.ClampMagnitude(desired - agent.velocity, agent.maxSteer);
         return steer;
     }
 
 
+    static public Vector3 InsideRectangle(SBAgent agent,Vector3 target, Vector3 centro, float width, float height)
+	{
+		Vector3 desired;
+        Vector3 steer ;
+        
+        Vector3 deseadoInsideRectangle;
+        Vector3 deseadoSeek = (target - agent.transform.position).normalized * agent.maxSpeed;
+
+	if (agent.transform.position.y >= centro.y + height / 4 || agent.transform.position.y <= centro.y - height / 4 ||
+            agent.transform.position.x >= centro.x + width / 4 || agent.transform.position.x <= centro.x - width / 4)
+		{
+			 deseadoInsideRectangle = (centro - agent.transform.position).normalized * agent.maxSpeed;
+		}
+		else
+		{
+			deseadoInsideRectangle = Vector3.zero;
+		}
+
+        desired = deseadoSeek + deseadoInsideRectangle;
+	    steer = Vector3.ClampMagnitude(desired - agent.velocity, agent.maxSteer);
+		
+		return steer;
+	}
 
 
 }
